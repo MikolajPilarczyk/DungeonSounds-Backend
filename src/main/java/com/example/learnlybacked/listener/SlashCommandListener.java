@@ -109,6 +109,7 @@ public class SlashCommandListener extends ListenerAdapter {
                                 (ignored) -> event.getHook().sendMessage("Stopped the current track").queue(),
                                 (error) -> event.getHook().sendMessage("Błąd: " + error.getMessage()).queue()
                         );
+                event.getHook().sendMessage("Stopped the current track").queue();
             }
 
 
@@ -117,7 +118,7 @@ public class SlashCommandListener extends ListenerAdapter {
         }
     }
 
-    private void handlePlayCommand(SlashCommandInteractionEvent event) {
+    public void handlePlayCommand(SlashCommandInteractionEvent event) {
         final Guild guild = event.getGuild();
         if (guild == null) return;
 
