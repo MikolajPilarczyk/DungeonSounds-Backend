@@ -1,13 +1,13 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.playlists;
 
+import com.example.learnlybacked.user.UserLikesRepository;
+import com.example.learnlybacked.user.UserRepository;
 import jakarta.transaction.Transactional;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -107,7 +107,8 @@ public class PlaylistController
     }
 
 
-    @Autowired UserLikesRepository userLikesRepository;
+    @Autowired
+    UserLikesRepository userLikesRepository;
 
     @Transactional
     @PostMapping("/like-playlist")

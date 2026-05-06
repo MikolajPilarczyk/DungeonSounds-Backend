@@ -1,12 +1,10 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.user;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController

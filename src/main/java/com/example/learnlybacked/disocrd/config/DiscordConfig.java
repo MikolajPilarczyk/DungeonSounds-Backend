@@ -55,12 +55,29 @@ public class DiscordConfig {
                     Commands.slash("join", "Dołącz do kanału głosowego."),
                     Commands.slash("leave", "Wyjdź z kanału głosowego."),
                     Commands.slash("stop", "Zatrzymaj odtwarzanie."),
-                    Commands.slash("pause", "Wstrzymaj lub wznów odtwarzacz."),
+                    Commands.slash("pause", "Wstrzymaj odtwarzacz."),
+                    Commands.slash("resume", "Wznów odtwarzacz."),
                     Commands.slash("play", "Odtwórz utwór")
                             .addOption(OptionType.STRING, "identifier", "Identyfikator utworu lub link", true)
             ).queue();
             System.out.println("Komendy zarejestrowane dla serwera!");
         }
+
+        jda.updateCommands().addCommands(
+                Commands.slash("say", "Treść do wysłania")
+                        .addOption(OptionType.STRING, "content", "Treść", true),
+                Commands.slash("roll", "Rzut kośćmi")
+                        .addOption(OptionType.STRING, "roll", "Liczba kości i ścian (np. 3d6)", true)
+                        .addOption(OptionType.STRING, "roll_bonus", "Bonus do rzutu (np. +2)", false),
+                Commands.slash("join", "Dołącz do kanału głosowego."),
+                Commands.slash("leave", "Wyjdź z kanału głosowego."),
+                Commands.slash("stop", "Zatrzymaj odtwarzanie."),
+                Commands.slash("pause", "Wstrzymaj odtwarzacz."),
+                Commands.slash("resume", "Wznów odtwarzacz."),
+                Commands.slash("play", "Odtwórz utwór")
+                        .addOption(OptionType.STRING, "identifier", "Identyfikator utworu lub link", true)
+        ).queue();
+        System.out.println("Komendy globalne zarejestrowane dla wszystkich serwerów!");
 
         return jda;
     }

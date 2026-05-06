@@ -1,11 +1,7 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -24,7 +20,7 @@ public class RegisterController {
 
 
     @PostMapping("/register")
-    public String receiveUser(@RequestBody UserLoginDTO  user) {
+    public String receiveUser(@RequestBody UserLoginDTO user) {
         System.out.println("Odebrano: " + user.getUserEmail());
         if(userRepository.findByCustomEmail(user.getUserEmail()) ==0 && userRepository.findUserByUsername(user.getUserNameAndSurname())==0)
         {

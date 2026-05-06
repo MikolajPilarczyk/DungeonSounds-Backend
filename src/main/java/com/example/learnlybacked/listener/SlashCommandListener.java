@@ -3,6 +3,7 @@ package com.example.learnlybacked.listener;
 import dev.arbjerg.lavalink.client.FunctionalLoadResultHandler;
 import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.Link;
+import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
@@ -12,6 +13,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Random;
@@ -103,15 +105,36 @@ public class SlashCommandListener extends ListenerAdapter {
                 event.deferReply(false).queue();
                 final long guildId = event.getGuild().getIdLong();
 
-                this.client.getOrCreateLink(guildId)
-                        .destroy()
+                var link = this.client.getOrCreateLink(guildId);
+
+                link.getPlayer().flatMap(player -> player.setPaused(true))
                         .subscribe(
-                                (ignored) -> event.getHook().sendMessage("Stopped the current track").queue(),
-                                (error) -> event.getHook().sendMessage("Błąd: " + error.getMessage()).queue()
+                                (updatedPlayer) -> {
+                                    event.getHook().sendMessage("Odtwarzanie zostało zapauzowane!").queue();
+                                },
+                                (error) -> {
+                                    event.getHook().sendMessage("Błąd podczas pauzowania: " + error.getMessage()).queue();
+                                }
                         );
-                event.getHook().sendMessage("Stopped the current track").queue();
             }
 
+            case "resume" -> {
+                event.deferReply(false).queue();
+                final long guildId = event.getGuild().getIdLong();
+
+                var link = this.client.getOrCreateLink(guildId);
+
+                link.getPlayer().flatMap(player -> player.setPaused(false))
+                        .subscribe(
+                                (updatedPlayer) -> {
+                                    event.getHook().sendMessage("Odtwarzanie zostało wznowione!").queue();
+                                },
+                                (error) -> {
+                                    event.getHook().sendMessage("Błąd podczas wznawiania: " + error.getMessage()).queue();
+                                }
+                        );
+
+            }
 
 
             case "play" -> handlePlayCommand(event);

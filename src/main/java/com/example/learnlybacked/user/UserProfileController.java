@@ -1,11 +1,12 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.user;
 
+import com.example.learnlybacked.playlists.UserPlaylistsSetTable;
+import com.example.learnlybacked.playlists.UserPlaylistsSetTableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController

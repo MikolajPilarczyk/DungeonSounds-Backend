@@ -1,11 +1,7 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.user;
 
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,7 +16,8 @@ public class EditProfileController {
 
     public record RecivaUserAvatar(String userNameAndSurname,String bio){}
 
-    @Autowired UserRepository userRepository;
+    @Autowired
+    UserRepository userRepository;
 
 
     @PostMapping("edit-username")

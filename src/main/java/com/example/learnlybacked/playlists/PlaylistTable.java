@@ -1,4 +1,4 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.playlists;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;

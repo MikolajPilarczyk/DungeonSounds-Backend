@@ -1,14 +1,12 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.playlists;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.example.learnlybacked.user.UserLoginDTO;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;

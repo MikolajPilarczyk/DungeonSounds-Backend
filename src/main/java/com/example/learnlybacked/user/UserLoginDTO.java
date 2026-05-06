@@ -1,11 +1,11 @@
-package com.example.learnlybacked;
+package com.example.learnlybacked.user;
 
+import com.example.learnlybacked.playlists.UserPlaylistsSetTable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.Set;
 
 @Getter
