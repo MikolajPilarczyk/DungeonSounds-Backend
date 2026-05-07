@@ -55,7 +55,6 @@ public class DiscordConfig {
                     Commands.slash("join", "Dołącz do kanału głosowego."),
                     Commands.slash("leave", "Wyjdź z kanału głosowego."),
                     Commands.slash("stop", "Zatrzymaj odtwarzanie."),
-                    Commands.slash("pause", "Wstrzymaj odtwarzacz."),
                     Commands.slash("resume", "Wznów odtwarzacz."),
                     Commands.slash("play", "Odtwórz utwór")
                             .addOption(OptionType.STRING, "identifier", "Identyfikator utworu lub link", true)
@@ -72,7 +71,6 @@ public class DiscordConfig {
                 Commands.slash("join", "Dołącz do kanału głosowego."),
                 Commands.slash("leave", "Wyjdź z kanału głosowego."),
                 Commands.slash("stop", "Zatrzymaj odtwarzanie."),
-                Commands.slash("pause", "Wstrzymaj odtwarzacz."),
                 Commands.slash("resume", "Wznów odtwarzacz."),
                 Commands.slash("play", "Odtwórz utwór")
                         .addOption(OptionType.STRING, "identifier", "Identyfikator utworu lub link", true)

@@ -1,5 +1,6 @@
 package com.example.learnlybacked.listener;
 
+import com.example.learnlybacked.music.MusicController;
 import dev.arbjerg.lavalink.client.FunctionalLoadResultHandler;
 import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.Link;
@@ -24,8 +25,16 @@ public class SlashCommandListener extends ListenerAdapter {
     @Autowired
     public LavalinkClient client;
 
+    private final MusicController musicController;
+
+    public SlashCommandListener(MusicController musicController) {
+        this.musicController = musicController;
+    }
+
+
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+
         switch (event.getName()) {
             case "say" -> {
                 String content = event.getOption("content", OptionMapping::getAsString);
@@ -107,7 +116,7 @@ public class SlashCommandListener extends ListenerAdapter {
 
                 var link = this.client.getOrCreateLink(guildId);
 
-                link.getPlayer().flatMap(player -> player.setPaused(true))
+               link.getPlayer().flatMap(player -> player.setPaused(true))
                         .subscribe(
                                 (updatedPlayer) -> {
                                     event.getHook().sendMessage("Odtwarzanie zostało zapauzowane!").queue();
@@ -116,6 +125,8 @@ public class SlashCommandListener extends ListenerAdapter {
                                     event.getHook().sendMessage("Błąd podczas pauzowania: " + error.getMessage()).queue();
                                 }
                         );
+
+
             }
 
             case "resume" -> {
@@ -133,6 +144,7 @@ public class SlashCommandListener extends ListenerAdapter {
                                     event.getHook().sendMessage("Błąd podczas wznawiania: " + error.getMessage()).queue();
                                 }
                         );
+
 
             }
 
