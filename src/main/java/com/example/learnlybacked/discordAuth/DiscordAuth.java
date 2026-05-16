@@ -4,6 +4,8 @@ import com.example.learnlybacked.music.MusicController;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -28,27 +30,20 @@ public class DiscordAuth {
     @Value("${redirectUri}")
     private String redirectUri;
 
+    public static class UserData
+    {
+        public String username;
+        public String avatar;
+        public String global_name;
+    }
 
     public static class FormData {
         public String code;
     }
 
-
-    @PostMapping("/auth/discord")
-    public void ReciveUserDiscordData(@RequestBody FormData data)
-    {
-        String code = data.code;
-
-        if(code==null || code.isEmpty())
-        {
-            System.out.println("Invalid code");
-        }
-
-    }
     public String getAccessToken(String code) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
 
-        // Dane do wysłania w formacie application/x-www-form-urlencoded
         Map<String, String> data = Map.of(
                 "client_id", clientId,
                 "client_secret", clientSecret,
@@ -62,15 +57,65 @@ public class DiscordAuth {
                 .collect(Collectors.joining("&"));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://discord.com/api/v10/oauth2/token"))
+                .uri(URI.create("https://discord.com/api/oauth2/token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(java.net.http.HttpRequest.BodyPublishers.ofString(form))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // Tutaj powinieneś użyć biblioteki JSON (np. Jackson lub Gson), aby wyciągnąć access_token
         return response.body();
     }
+
+    public String getUserInfo(String accessToken) throws Exception {
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://discord.com/api/users/@me"))
+                .header("Authorization", "Bearer " + accessToken)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        return response.body();
+
+
+    }
+
+
+    @PostMapping("/auth/discord")
+    public void ReciveUserDiscordData(@RequestBody FormData data) throws Exception {
+        String code = data.code;
+        System.out.println("codeIs: " + code);
+
+        if(code==null || code.isEmpty())
+        {
+            System.out.println("Invalid code");
+        }
+        else {
+            String accesToken = getAccessToken(code);
+            System.out.println("Access token: " + accesToken);
+
+            JsonNode jsonNode = new ObjectMapper().readTree(accesToken);
+
+
+            String accessToken = jsonNode.get("access_token").asText();
+            String refreshToken = jsonNode.get("refresh_token").asText();
+            String tokenType = jsonNode.get("token_type").asText();
+            String expiresIn = jsonNode.get("expires_in").asText();
+
+            String userDataRespone = getUserInfo(accessToken);
+
+            System.out.println("userDataRespone: " + userDataRespone);
+
+            // Teraz dodaj tu rejestracie/logowanie wyszukaj po tym czy jest już osoba z tym discord id
+
+
+        }
+
+    }
+
 
 }
