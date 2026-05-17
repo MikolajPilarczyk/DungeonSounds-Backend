@@ -140,6 +140,9 @@ public class DiscordAuth {
                 userDataToSave.setDiscord_id(discord_id);
 
                 // tutaj ważne dodaj skrypt który zmienie tą nazwe urzytkownika w momencie gdy skrypt wykryje że różni się ona od tej jaką ma sie na discordzie
+
+
+
                 userDataToSave.setUserNameAndSurname(userDataFromRespone.get("username").asText());
 
 

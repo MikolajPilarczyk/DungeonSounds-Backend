@@ -28,7 +28,7 @@ public class PlaylistController
     }
     public static class FormDataPlaylistSet
     {
-        public String username;
+        public Long id;
         public String title;
         public String category;
         public String description;
@@ -53,10 +53,10 @@ public class PlaylistController
     public String UploadPlaylistSet(@RequestBody FormDataPlaylistSet data)
     {
         UserPlaylistsSetTable dataToSave = new UserPlaylistsSetTable();
-        Long userID = userRepository.getUserIdByUsername(data.username);
+        Long userID = data.id;
         if (userID == null) {
-            System.out.println(data.username);
-            return "Błąd: Nie znaleziono użytkownika o nazwie: " + data.username;
+            System.out.println(data.id);
+            return "Błąd: Nie znaleziono użytkownika o nazwie: " + data.id;
         }
 
         dataToSave.setTitle(data.title);
@@ -102,7 +102,7 @@ public class PlaylistController
     @Setter
     public static class UserDataToLikePlaylist
     {
-        String username;
+        Long id;
         Long playlistId;
     }
 
@@ -114,7 +114,7 @@ public class PlaylistController
     @PostMapping("/like-playlist")
     public String LikePlaylist(@RequestBody UserDataToLikePlaylist data)
     {
-        Long userID = userRepository.getUserIdByUsername(data.getUsername());
+        Long userID = data.getId();
 
         userRepository.giveLike(userID);
         userLikesRepository.likePlaylist(userID, data.getPlaylistId());
@@ -126,7 +126,7 @@ public class PlaylistController
     public String UnlikePlaylist(@RequestBody UserDataToLikePlaylist data)
     {
 
-        Long userID = userRepository.getUserIdByUsername(data.getUsername());
+        Long userID = data.getId();
 
 
         userRepository.takeAwayLike(userID);
@@ -139,7 +139,7 @@ public class PlaylistController
     @PostMapping("/isLiked")
     public boolean IsLiked(@RequestBody UserDataToLikePlaylist data)
     {
-        Long userID = userRepository.getUserIdByUsername(data.getUsername());
+        Long userID = data.getId();
 
 
         return userLikesRepository.isLiked(userID, data.getPlaylistId());
