@@ -32,6 +32,18 @@ public interface UserRepository extends JpaRepository<UserLoginDTO, Long> {
     @Query("SELECT u.userNameAndSurname,u.bio,u.likes,u.materials,u.accountType from UserLoginDTO u where u.userNameAndSurname = :username")
     UserProfileController.UserProfileData takeUserProfileDataByUsername(@Param("username") String username);
 
+
+    @Query("SELECT count(u) FROM UserLoginDTO u where u.discord_id = :discordId")
+    int getNumberOfUsersByDiscordId(@Param("discordId") String discordId);
+
+
+
+    @Query("SELECT u FROM UserLoginDTO u where u.id = :id")
+    UserLoginDTO takeAllDataById(@Param("id") Long id);
+
+    @Query("SELECT u.id FROM UserLoginDTO u WHERE u.discord_id = :discord_id")
+    Long getUserIdByDiscord_id(@Param("discord_id") String discord_id);
+
     @Modifying
     @Transactional
     @Query("UPDATE UserLoginDTO u SET u.userNameAndSurname = :name WHERE u.id = :id")

@@ -1,6 +1,9 @@
 package com.example.learnlybacked.discordAuth;
 
 import com.example.learnlybacked.music.MusicController;
+import com.example.learnlybacked.user.UserLoginDTO;
+import com.example.learnlybacked.user.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,9 @@ import java.util.stream.Collectors;
 @Service
 public class DiscordAuth {
 
+    @Autowired
+    UserRepository userRepository;
+
     @Value("${discord.cliend.id}")
     private String clientId;
 
@@ -30,11 +36,14 @@ public class DiscordAuth {
     @Value("${redirectUri}")
     private String redirectUri;
 
-    public static class UserData
+    public static class UserDiscordReturnData
     {
         public String username;
-        public String avatar;
         public String global_name;
+        public String avatarURL;
+        public Long id;
+        public String discordId;
+        public boolean isLogged = false;
     }
 
     public static class FormData {
@@ -86,31 +95,105 @@ public class DiscordAuth {
 
 
     @PostMapping("/auth/discord")
-    public void ReciveUserDiscordData(@RequestBody FormData data) throws Exception {
+    public UserDiscordReturnData ReciveUserDiscordData(@RequestBody FormData data) throws Exception {
         String code = data.code;
         System.out.println("codeIs: " + code);
 
         if(code==null || code.isEmpty())
         {
             System.out.println("Invalid code");
+            return null;
         }
         else {
             String accesToken = getAccessToken(code);
             System.out.println("Access token: " + accesToken);
 
-            JsonNode jsonNode = new ObjectMapper().readTree(accesToken);
 
 
-            String accessToken = jsonNode.get("access_token").asText();
-            String refreshToken = jsonNode.get("refresh_token").asText();
-            String tokenType = jsonNode.get("token_type").asText();
-            String expiresIn = jsonNode.get("expires_in").asText();
+            JsonNode dataFromCode = new ObjectMapper().readTree(accesToken);
+
+
+            String accessToken = dataFromCode.get("access_token").asText();
+
+            //Take it if you will need it
+            //
+            //String refreshToken = dataFromCode.get("refresh_token").asText();
+            //String tokenType = dataFromCode.get("token_type").asText();
+            //String expiresIn = dataFromCode.get("expires_in").asText();
 
             String userDataRespone = getUserInfo(accessToken);
-
             System.out.println("userDataRespone: " + userDataRespone);
+            JsonNode userDataFromRespone = new ObjectMapper().readTree(userDataRespone);
 
-            // Teraz dodaj tu rejestracie/logowanie wyszukaj po tym czy jest już osoba z tym discord id
+
+
+
+            String discord_id = userDataFromRespone.get("id").asString();
+            int numberOfUsers = userRepository.getNumberOfUsersByDiscordId(discord_id);
+
+            if(numberOfUsers==0)
+            {
+                // User Register Procces
+                //dodaj usera
+                System.out.println("No users found");
+                UserLoginDTO userDataToSave = new UserLoginDTO();
+                userDataToSave.setDiscord_id(discord_id);
+
+                // tutaj ważne dodaj skrypt który zmienie tą nazwe urzytkownika w momencie gdy skrypt wykryje że różni się ona od tej jaką ma sie na discordzie
+                userDataToSave.setUserNameAndSurname(userDataFromRespone.get("username").asText());
+
+
+                userRepository.save(userDataToSave);
+
+                UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
+
+                userDiscordReturnData.username = userDataFromRespone.get("username").asText();
+                userDiscordReturnData.global_name = userDataFromRespone.get("global_name").asText();
+                userDiscordReturnData.isLogged = true;
+                userDiscordReturnData.discordId = discord_id;
+
+                String avatar = userDataFromRespone.get("avatar").asText();
+                String avatarURL = "https://cdn.discordapp.com/avatars/"+discord_id+"/"+avatar+".png";
+
+                userDiscordReturnData.avatarURL = avatarURL;
+
+                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
+                userDiscordReturnData.id = userId;
+
+
+                System.out.println("regged in" + userDiscordReturnData);
+
+
+                return userDiscordReturnData;
+
+            }
+            else{
+
+
+
+
+                UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
+                userDiscordReturnData.username = userDataFromRespone.get("username").asText();
+                userDiscordReturnData.global_name = userDataFromRespone.get("global_name").asText();
+                userDiscordReturnData.isLogged = true;
+                userDiscordReturnData.discordId = discord_id;
+
+                String avatar = userDataFromRespone.get("avatar").asText();
+                String avatarURL = "https://cdn.discordapp.com/avatars/"+discord_id+"/"+avatar+".png";
+
+                userDiscordReturnData.avatarURL = avatarURL;
+
+
+                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
+                userDiscordReturnData.id = userId;
+
+                System.out.println("logged in" + userDiscordReturnData);
+
+                return userDiscordReturnData;
+
+            }
+
+
 
 
         }

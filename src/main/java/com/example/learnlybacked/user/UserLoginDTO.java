@@ -16,15 +16,21 @@ import java.util.Set;
 public class UserLoginDTO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long id;
     private String discord_id;
+
+
+
+
     private String userNameAndSurname;
 
     private String userEmail;
     private String password;
+
+
     private String accountType;
     private String bio;
-    private String imagePath;
 
     @Transient
     private Set<UserPlaylistsSetTable> likedPlaylists;
