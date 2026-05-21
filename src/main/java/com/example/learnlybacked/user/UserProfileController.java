@@ -41,6 +41,16 @@ public class UserProfileController {
         return returnData;
     }
 
+    @PostMapping("/user/get-name")
+    public String GetUserName(@RequestBody Long id) {
+
+        String username = userRepository.getNameById(id);
+
+
+        System.out.println("wyslano nazwe urzytkownika" + username);
+        return username;
+    }
+
     @PostMapping("/find/user")
     public Integer FindUser(@RequestBody UsernameToSend user) {
 

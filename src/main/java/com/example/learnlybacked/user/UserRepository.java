@@ -37,12 +37,21 @@ public interface UserRepository extends JpaRepository<UserLoginDTO, Long> {
     int getNumberOfUsersByDiscordId(@Param("discordId") String discordId);
 
 
+    @Query("SELECT u.userNameAndSurname FROM UserLoginDTO u where u.discord_id = :discordId")
+    String getUserNameByDiscordId(@Param("discordId") String discordId);
+
+
 
     @Query("SELECT u FROM UserLoginDTO u where u.id = :id")
     UserLoginDTO takeAllDataById(@Param("id") Long id);
 
     @Query("SELECT u.id FROM UserLoginDTO u WHERE u.discord_id = :discord_id")
     Long getUserIdByDiscord_id(@Param("discord_id") String discord_id);
+
+
+    @Query("SELECT u.userNameAndSurname FROM UserLoginDTO u WHERE u.id = :id")
+    String getNameById(@Param("id") Long id);
+
 
     @Modifying
     @Transactional
@@ -71,4 +80,5 @@ public interface UserRepository extends JpaRepository<UserLoginDTO, Long> {
     void takeAwayLike(@Param("id") Long id);
 
 
+    Long id(Long id);
 }

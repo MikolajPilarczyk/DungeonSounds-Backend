@@ -139,7 +139,6 @@ public class DiscordAuth {
                 UserLoginDTO userDataToSave = new UserLoginDTO();
                 userDataToSave.setDiscord_id(discord_id);
 
-                // tutaj ważne dodaj skrypt który zmienie tą nazwe urzytkownika w momencie gdy skrypt wykryje że różni się ona od tej jaką ma sie na discordzie
 
 
 
@@ -173,6 +172,19 @@ public class DiscordAuth {
             else{
 
 
+                // tutaj ważne dodaj skrypt który zmienie tą nazwe urzytkownika w momencie gdy skrypt wykryje że różni się ona od tej jaką ma sie na discordzie
+
+
+                String usernameFromResponse = userDataFromRespone.get("username").asText();
+                String userGlobalNameFromDB = userRepository.getUserNameByDiscordId(discord_id);
+                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
+
+
+                if(usernameFromResponse !=userGlobalNameFromDB)
+                {
+                    System.out.println("Updating data");
+                    userRepository.updateUsername(userId,usernameFromResponse);
+                }
 
 
                 UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
@@ -187,7 +199,6 @@ public class DiscordAuth {
                 userDiscordReturnData.avatarURL = avatarURL;
 
 
-                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
                 userDiscordReturnData.id = userId;
 
                 System.out.println("logged in" + userDiscordReturnData);

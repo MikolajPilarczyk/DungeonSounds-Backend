@@ -12,7 +12,7 @@ public class EditProfileController {
     public record ReciveNewUsername(String username,String newUserName){}
 
 
-    public record ReciveUserBio(String userNameAndSurname,String bio){}
+    public record ReciveUserBio(Long id,String bio){}
 
     public record RecivaUserAvatar(String userNameAndSurname,String bio){}
 
@@ -40,7 +40,7 @@ public class EditProfileController {
     @PostMapping("edit-bio")
     public String ReciveUserData(@RequestBody ReciveUserBio bio)
     {
-        Long userId = userRepository.getUserIdByUsername(bio.userNameAndSurname);
+        Long userId = bio.id;
         userRepository.updateUserBio(userId,bio.bio);
         return "Zmieniono opis urzytkownika";
     }
