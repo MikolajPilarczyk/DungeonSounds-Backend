@@ -3,6 +3,8 @@ package com.example.learnlybacked.music;
 import com.example.learnlybacked.playlists.PlaylistController;
 import com.example.learnlybacked.playlists.UserPlaylistsSetTable;
 import dev.arbjerg.lavalink.client.LavalinkClient;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,10 +21,14 @@ public class MusicController
     private final LavalinkClient client;
 
 
+    @Getter
+    @Setter
     public static class SongData
     {
-        public Long id;
-        public boolean playing;
+        private Long trackId;
+        private String trackTitle;
+        private String trackUrl;
+        private  String discordId;
     }
 
     public MusicController(LavalinkClient client)
@@ -72,7 +78,9 @@ public class MusicController
     @PostMapping("/playsong")
     public void RecivePlaylistSet(@RequestBody SongData songData)
     {
-        System.out.println("Wywolano" + songData.id + songData.playing);
+        System.out.println("Wywolano" + songData.getDiscordId() + songData.getTrackTitle()+ songData.getTrackUrl()+ songData.getTrackId());
+
+
 
     }
 
