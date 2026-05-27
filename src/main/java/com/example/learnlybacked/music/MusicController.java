@@ -73,6 +73,10 @@ public class MusicController
 
 
 
+    public void ReciveUserGuild(String discordId)
+    {
+
+    }
 
 
     @PostMapping("/playsong")

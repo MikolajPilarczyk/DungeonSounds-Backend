@@ -16,7 +16,7 @@ import lombok.Setter;
 public class DiscordServersDTO {
     @Id
     @Column(name = "server_id")
-    private String serverId;
+        private String serverId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
