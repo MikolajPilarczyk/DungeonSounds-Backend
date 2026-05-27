@@ -28,7 +28,7 @@ public class MusicController
         private Long trackId;
         private String trackTitle;
         private String trackUrl;
-        private  String discordId;
+        private String guildId;
     }
 
     public MusicController(LavalinkClient client)
@@ -82,7 +82,7 @@ public class MusicController
     @PostMapping("/playsong")
     public void RecivePlaylistSet(@RequestBody SongData songData)
     {
-        System.out.println("Wywolano" + songData.getDiscordId() + songData.getTrackTitle()+ songData.getTrackUrl()+ songData.getTrackId());
+        System.out.println("Wywolano piosenke " + songData.getGuildId()+ " " + songData.getTrackTitle()+" " +songData.getTrackUrl()+" "+ songData.getTrackId());
 
 
 
