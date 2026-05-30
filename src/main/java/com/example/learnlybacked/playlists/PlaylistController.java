@@ -46,6 +46,17 @@ public class PlaylistController
     @Autowired
     private UserPlaylistsSetTableRepository userPlaylistsSetTableRepository;
 
+    public record SoundCloudTrackDto(
+            Long id,
+            String title,
+            Long duration // Czas w milisekundach zwracany przez API
+    ) {}
+
+    public SoundCloudTrackDto GetSongDuration()
+    {
+
+        return "";
+    }
 
 
     @Transactional
@@ -75,6 +86,8 @@ public class PlaylistController
                 SongsTable song = new SongsTable();
                 song.setTitle(data.playlists.get(i).songs.get(j).title);
                 song.setUrl(data.playlists.get(i).songs.get(j).url);
+
+                song.setDuration();
 
                 playlistToSave.addSong(song);
             }

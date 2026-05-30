@@ -33,6 +33,11 @@
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <!-- JDA 5.0.2 — kompatybilne z lavalink-client 3.4.0 -->
         <dependency>
             <groupId>net.dv8tion</groupId>
