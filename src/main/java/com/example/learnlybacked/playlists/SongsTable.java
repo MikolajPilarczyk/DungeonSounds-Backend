@@ -18,6 +18,7 @@ public class SongsTable {
     private Long id;
     private String title;
     private String url;
+    private String duration;
 
     @ManyToOne
     @JsonBackReference
