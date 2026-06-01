@@ -1,6 +1,5 @@
 package com.example.learnlybacked.playlists;
 
-import com.example.learnlybacked.soundcloud.SoundCloudService;
 import com.example.learnlybacked.user.UserLikesRepository;
 import com.example.learnlybacked.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -40,7 +39,7 @@ public class PlaylistController
     record PlaylistId(Long playlistId) { }
 
 
-    SoundCloudService soundCloudService;
+
 
     @Autowired
     UserRepository userRepository;
@@ -51,7 +50,7 @@ public class PlaylistController
     public record SoundCloudTrackDto(
             Long id,
             String title,
-            String duration
+            Long duration
     ) {}
 
 
@@ -82,22 +81,9 @@ public class PlaylistController
             for (int j = 0; j < data.playlists.get(i).songs.size(); j++) {
                 //Current Song
                 SongsTable song = new SongsTable();
+                song.setTitle(data.playlists.get(i).songs.get(j).title);
                 song.setUrl(data.playlists.get(i).songs.get(j).url);
 
-                SoundCloudTrackDto songData =  soundCloudService.getSongDuration(data.playlists.get(i).songs.get(j).url);
-                song.setDuration(song.getDuration());
-
-                String tempSongTittle = (data.playlists.get(i).songs.get(j).title);
-
-                song.setDuration(songData.duration);
-                if(tempSongTittle=="" || tempSongTittle.equals(null)) {
-                    song.setTitle(songData.title);
-                }
-                else
-                {
-                    song.setTitle(tempSongTittle);
-
-                }
 
                 playlistToSave.addSong(song);
             }
