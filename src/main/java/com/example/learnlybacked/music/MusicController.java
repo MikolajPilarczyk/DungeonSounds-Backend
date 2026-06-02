@@ -4,6 +4,7 @@ import dev.arbjerg.lavalink.client.FunctionalLoadResultHandler;
 import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.Link;
 import dev.arbjerg.lavalink.client.player.Track;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.JDA;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -48,50 +51,54 @@ public class MusicController {
         this.jda = jda;
     }
 
-    // --- NOWE ENDPOINTY OBSŁUGUJĄCE PAUZĘ I WZNOWIENIE ---
+    public record SongDurationData(
+            String durationMs,   // długość w ms jako String
+            String title
+    ) {}
+
+
+
+    public record PauseStateData(boolean paused) {}
 
     @PostMapping("/pause")
-    public ResponseEntity<String> pauseTrack(@RequestBody ControlData data) {
+    public ResponseEntity<PauseStateData> pauseTrack(@RequestBody ControlData data) {
         if (data.getGuildId() == null || data.getGuildId().isEmpty()) {
-            return ResponseEntity.badRequest().body("Brak guildId w żądaniu.");
+            return ResponseEntity.badRequest().build();
         }
         try {
             long guildId = Long.parseLong(data.getGuildId());
             PauseMusic(guildId);
-            return ResponseEntity.ok("Zgłoszono żądanie zapauzowania.");
+            return ResponseEntity.ok(new PauseStateData(true));
         } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body("Niepoprawny format guildId.");
+            return ResponseEntity.badRequest().build();
         }
     }
 
     @PostMapping("/resume")
-    public ResponseEntity<String> resumeTrack(@RequestBody ControlData data) {
+    public ResponseEntity<PauseStateData> resumeTrack(@RequestBody ControlData data) {
         if (data.getGuildId() == null || data.getGuildId().isEmpty()) {
-            return ResponseEntity.badRequest().body("Brak guildId w żądaniu.");
+            return ResponseEntity.badRequest().build();
         }
         try {
             long guildId = Long.parseLong(data.getGuildId());
             ResumeMusic(guildId);
-            return ResponseEntity.ok("Zgłoszono żądanie odpauzowania.");
+            return ResponseEntity.ok(new PauseStateData(false));
         } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body("Niepoprawny format guildId.");
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    // --- ZABEZPIECZONY ENDPOINT PLAYSONG ---
 
     @PostMapping("/playsong")
-    public ResponseEntity<String> RecivePlaylistSet(@RequestBody SongData songData) {
+    public ResponseEntity<SongDurationData> RecivePlaylistSet(@RequestBody SongData songData) {
         System.out.println("Wywołano piosenkę z web: " + songData.getGuildId() + " " + songData.getTrackTitle());
 
         // Walidacja obecności wymaganych danych tekstowych
         if (songData.getGuildId() == null || songData.getGuildId().isEmpty()) {
             System.err.println("[API] Błąd: Przesłane guildId jest puste.");
-            return ResponseEntity.badRequest().body("Brak guildId.");
         }
         if (songData.getUserId() == null || songData.getUserId().isEmpty()) {
             System.err.println("[API] Błąd: Przesłane userId jest puste.");
-            return ResponseEntity.badRequest().body("Brak userId.");
         }
 
         try {
@@ -99,30 +106,30 @@ public class MusicController {
             long userId = Long.parseLong(songData.getUserId());
 
             Long channelId = getUserVoiceChannelId(guildId, userId);
-
             if (channelId == null) {
-                System.err.println("[API] Anulowano: Użytkownik nie znajduje się na kanale głosowym.");
-                return ResponseEntity.badRequest().body("Użytkownik nie jest na kanale głosowym.");
+                return ResponseEntity.badRequest().build();
             }
 
             JoinChannel(guildId, channelId);
 
             String trackLink = songData.getTrackUrl();
             if (trackLink == null || trackLink.isEmpty()) {
-                System.err.println("[API] Błąd: Link do utworu jest pusty.");
-                return ResponseEntity.badRequest().body("Brak linku do utworu.");
+                return ResponseEntity.badRequest().build();
             }
 
-            PlayMusic(guildId, trackLink);
-            return ResponseEntity.ok("Piosenka została wysłana do bota.");
+            SongDurationData songDurationData = playMusic(guildId, trackLink);
+
+            if (songDurationData == null) {
+                return ResponseEntity.status(404).build();
+            }
+
+            return ResponseEntity.ok(songDurationData); // <-- zwraca JSON z danymi
 
         } catch (NumberFormatException e) {
-            System.err.println("Błąd: Niepoprawny format danych (guildId/userId): " + e.getMessage());
-            return ResponseEntity.badRequest().body("Niepoprawny format ID.");
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    // --- POZOSTAŁE METODY POMOCNICZE (BEZ ZMIAN) ---
 
     public Long getUserVoiceChannelId(long guildId, long userId) {
         Guild guild = jda.getGuildById(guildId);
@@ -185,9 +192,11 @@ public class MusicController {
                 );
     }
 
-    public void PlayMusic(long guildId, String trackLink) {
+    public SongDurationData playMusic(long guildId, String trackLink) {
         System.out.println("[Lavalink] Próba uruchomienia utworu dla gildii " + guildId + ": " + trackLink);
         final Link link = this.client.getOrCreateLink(guildId);
+
+        CompletableFuture<SongDurationData> future = new CompletableFuture<>();
 
         link.loadItem(trackLink).subscribe(new FunctionalLoadResultHandler(
                 (trackLoad) -> {
@@ -196,14 +205,21 @@ public class MusicController {
                             .setTrack(track)
                             .setVolume(75)
                             .subscribe(
-                                    (player) -> System.out.println("[Lavalink] Odtwarzam: " + track.getInfo().getTitle()),
-                                    (error) -> System.err.println("[Lavalink] Błąd ustawiania tracka: " + error.getMessage())
+                                    (player) -> {
+                                        System.out.println("[Lavalink] Odtwarzam: " + track.getInfo().getTitle());
+                                        future.complete(buildDurationData(track));
+                                    },
+                                    (error) -> {
+                                        System.err.println("[Lavalink] Błąd ustawiania tracka: " + error.getMessage());
+                                        future.completeExceptionally(error);
+                                    }
                             );
                 },
                 (playlistLoad) -> {
                     final List<Track> tracks = playlistLoad.getTracks();
                     if (tracks.isEmpty()) {
                         System.out.println("[Lavalink] Playlista jest pusta.");
+                        future.complete(null);
                         return;
                     }
                     final Track firstTrack = tracks.get(0);
@@ -211,14 +227,21 @@ public class MusicController {
                             .setTrack(firstTrack)
                             .setVolume(75)
                             .subscribe(
-                                    (player) -> System.out.println("[Lavalink] Odtwarzam z playlisty: " + firstTrack.getInfo().getTitle()),
-                                    (error) -> System.err.println("[Lavalink] Błąd playlisty: " + error.getMessage())
+                                    (player) -> {
+                                        System.out.println("[Lavalink] Odtwarzam z playlisty: " + firstTrack.getInfo().getTitle());
+                                        future.complete(buildDurationData(firstTrack));
+                                    },
+                                    (error) -> {
+                                        System.err.println("[Lavalink] Błąd playlisty: " + error.getMessage());
+                                        future.completeExceptionally(error);
+                                    }
                             );
                 },
                 (searchLoad) -> {
                     final List<Track> tracks = searchLoad.getTracks();
                     if (tracks.isEmpty()) {
                         System.out.println("[Lavalink] Nie znaleziono wyników wyszukiwania.");
+                        future.complete(null);
                         return;
                     }
                     final Track firstTrack = tracks.get(0);
@@ -226,18 +249,41 @@ public class MusicController {
                             .setTrack(firstTrack)
                             .setVolume(75)
                             .subscribe(
-                                    (player) -> System.out.println("[Lavalink] Odtwarzam z wyszukiwarki: " + firstTrack.getInfo().getTitle()),
-                                    (error) -> System.err.println("[Lavalink] Błąd wyszukiwania: " + error.getMessage())
+                                    (player) -> {
+                                        System.out.println("[Lavalink] Odtwarzam z wyszukiwarki: " + firstTrack.getInfo().getTitle());
+                                        future.complete(buildDurationData(firstTrack));
+                                    },
+                                    (error) -> {
+                                        System.err.println("[Lavalink] Błąd wyszukiwania: " + error.getMessage());
+                                        future.completeExceptionally(error);
+                                    }
                             );
                 },
-                () -> System.out.println("[Lavalink] Nie znaleziono utworu dla podanego identyfikatora."),
+                () -> {
+                    System.out.println("[Lavalink] Nie znaleziono utworu.");
+                    future.complete(null);
+                },
                 (loadFailed) -> {
                     String reason = loadFailed.getException().getMessage();
-                    System.err.println("[Lavalink] Błąd ładowania utworu. Powód: " + reason);
+                    System.err.println("[Lavalink] Błąd ładowania: " + reason);
                 }
         ));
+
+        try {
+            return future.get(10, TimeUnit.SECONDS); // timeout 10s
+        } catch (Exception e) {
+            System.err.println("[Lavalink] Timeout lub błąd: " + e.getMessage());
+            return null;
+        }
     }
 
-    public void ReciveUserGuild(String discordId) {
+    private SongDurationData buildDurationData(Track track) {
+        long durationMs = track.getInfo().getLength();
+        return new SongDurationData(
+                String.valueOf(durationMs),
+                track.getInfo().getTitle()
+        );
     }
+
+
 }
