@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<UserLoginDTO, Long> {
     @Query("SELECT u from UserLoginDTO u where u.userNameAndSurname = :username")
     UserLoginDTO takeAllDataByName(@Param("username") String username);
 
-    @Query("SELECT u.userNameAndSurname,u.bio,u.likes,u.materials,u.accountType from UserLoginDTO u where u.userNameAndSurname = :username")
+    @Query("SELECT u.userNameAndSurname, u.bio, u.likes, u.materials, u.accountType, u.url FROM UserLoginDTO u WHERE u.userNameAndSurname = :username")
     UserProfileController.UserProfileData takeUserProfileDataByUsername(@Param("username") String username);
 
 
@@ -65,8 +65,14 @@ public interface UserRepository extends JpaRepository<UserLoginDTO, Long> {
     void updateUserBio(@Param("id") Long id, @Param("bio") String bio);
 
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserLoginDTO u SET u.url = :url WHERE u.id = :id")
+    void updateUserUrl(@Param("id") Long id, @Param("url") String bio);
 
-   //Lajkowanie ststystyki!!!!
+
+
+    //Lajkowanie ststystyki!!!!
     @Modifying
     @Transactional
     @Query("UPDATE UserLoginDTO u set u.likes = u.likes + 1 where u.id = :id")

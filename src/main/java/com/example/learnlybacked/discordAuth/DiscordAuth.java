@@ -2,17 +2,16 @@ package com.example.learnlybacked.discordAuth;
 
 import com.example.learnlybacked.discordSerwers.DiscordServersDTO;
 import com.example.learnlybacked.discordSerwers.DiscordServersRepository;
-import com.example.learnlybacked.music.MusicController;
 import com.example.learnlybacked.user.UserLoginDTO;
 import com.example.learnlybacked.user.UserRepository;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -21,7 +20,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import org.springframework.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
@@ -29,18 +27,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api")
-@Service
 public class DiscordAuth {
 
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Autowired
-    DiscordServersRepository discordServersRepository;
+    private DiscordServersRepository discordServersRepository;
 
     @Value("${discord.cliend.id}")
     private String clientId;
@@ -51,6 +47,13 @@ public class DiscordAuth {
     @Value("${redirectUri}")
     private String redirectUri;
 
+    @Value("${discord.token}")
+    private String BOT_TOKEN;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Data
     public static class UserDiscordReturnData {
         public String username;
         public String global_name;
@@ -62,6 +65,28 @@ public class DiscordAuth {
 
     public static class FormData {
         public String code;
+    }
+
+    @Data
+    public static class GuildsReturnData {
+        private String id;
+        private String name;
+        private String iconUrl;
+
+        public GuildsReturnData(String id, String name, String icon) {
+            this.id = id;
+            this.name = name;
+            this.iconUrl = (icon != null)
+                    ? "https://cdn.discordapp.com/icons/" + id + "/" + icon + ".png"
+                    : null;
+        }
+    }
+
+    @Data
+    private static class DiscordGuildDTO {
+        private String id;
+        private String name;
+        private String icon;
     }
 
     public String getAccessToken(String code) throws Exception {
@@ -82,16 +107,14 @@ public class DiscordAuth {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://discord.com/api/oauth2/token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(form))
+                .POST(HttpRequest.BodyPublishers.ofString(form))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
         return response.body();
     }
 
     public String getUserInfo(String accessToken) throws Exception {
-
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -101,211 +124,138 @@ public class DiscordAuth {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
         return response.body();
-
-
     }
 
+    public List<GuildsReturnData> getUserGuilds(String userAccessToken, String discordId) throws Exception {
+        List<GuildsReturnData> sharedGuilds = new ArrayList<>();
 
+        HttpHeaders userHeaders = new HttpHeaders();
+        userHeaders.set("Authorization", "Bearer " + userAccessToken);
+        HttpEntity<String> userEntity = new HttpEntity<>(userHeaders);
 
-        @Data
-        public static class GuildsReturnData {
-            private String id;
-            private String name;
-            private String iconUrl;
-
-            public GuildsReturnData(String id, String name, String icon) {
-                this.id = id;
-                this.name = name;
-                this.iconUrl = (icon != null)
-                        ? "https://cdn.discordapp.com/icons/" + id + "/" + icon + ".png"
-                        : null;
-            }
+        DiscordGuildDTO[] userGuilds;
+        try {
+            String guildsUrl = "https://discord.com/api/users/@me/guilds";
+            ResponseEntity<DiscordGuildDTO[]> response = restTemplate.exchange(
+                    guildsUrl, HttpMethod.GET, userEntity, DiscordGuildDTO[].class
+            );
+            userGuilds = response.getBody();
+        } catch (Exception e) {
+            throw new Exception("Błąd podczas pobierania serwerów użytkownika z Discord API: " + e.getMessage());
         }
 
-        @Data
-        private static class DiscordGuildDTO {
-            private String id;
-            private String name;
-            private String icon;
-        }
+        HttpHeaders botHeaders = new HttpHeaders();
+        botHeaders.set("Authorization", "Bot " + BOT_TOKEN);
+        HttpEntity<String> botEntity = new HttpEntity<>(botHeaders);
 
-        private final RestTemplate restTemplate = new RestTemplate();
+        if (userGuilds != null) {
+            for (DiscordGuildDTO guild : userGuilds) {
+                String memberUrl = "https://discord.com/api/guilds/" + guild.getId() + "/members/" + discordId.trim();
+                try {
+                    ResponseEntity<String> memberResponse = restTemplate.exchange(
+                            memberUrl, HttpMethod.GET, botEntity, String.class
+                    );
 
-        @Value("${discord.token}")
-        private String BOT_TOKEN;
-
-
-        public List<GuildsReturnData> getUserGuilds(String userAccessToken, String discordId) throws Exception {
-            List<GuildsReturnData> sharedGuilds = new ArrayList<>();
-
-            HttpHeaders userHeaders = new HttpHeaders();
-            userHeaders.set("Authorization", "Bearer " + userAccessToken);
-            HttpEntity<String> userEntity = new HttpEntity<>(userHeaders);
-
-            DiscordGuildDTO[] userGuilds;
-            try {
-                String guildsUrl = "https://discord.com/api/users/@me/guilds";
-                ResponseEntity<DiscordGuildDTO[]> response = restTemplate.exchange(
-                        guildsUrl, HttpMethod.GET, userEntity, DiscordGuildDTO[].class
-                );
-                userGuilds = response.getBody();
-            } catch (Exception e) {
-                throw new Exception("Błąd podczas pobierania serwerów użytkownika z Discord API: " + e.getMessage());
-            }
-
-            HttpHeaders botHeaders = new HttpHeaders();
-            botHeaders.set("Authorization", "Bot " + BOT_TOKEN);
-            HttpEntity<String> botEntity = new HttpEntity<>(botHeaders);
-
-            if (userGuilds != null) {
-                for (DiscordGuildDTO guild : userGuilds) {
-                    String memberUrl = "https://discord.com/api/guilds/" + guild.getId() + "/members/" + discordId.trim();
-
-                    try {
-                        ResponseEntity<String> memberResponse = restTemplate.exchange(
-                                memberUrl, HttpMethod.GET, botEntity, String.class
-                        );
-
-                        if (memberResponse.getStatusCode() == HttpStatus.OK) {
-                            sharedGuilds.add(new GuildsReturnData(guild.getId(), guild.getName(), guild.getIcon()));
-                        }
-                    } catch (HttpClientErrorException.NotFound e) {
-                    } catch (HttpClientErrorException.Forbidden e) {
-                    } catch (Exception e) {
+                    if (memberResponse.getStatusCode() == HttpStatus.OK) {
+                        sharedGuilds.add(new GuildsReturnData(guild.getId(), guild.getName(), guild.getIcon()));
                     }
+                } catch (HttpClientErrorException.NotFound | HttpClientErrorException.Forbidden e) {
+                    // Ignorujemy jeśli bot nie ma dostępu lub użytkownika nie ma na serwerze
+                } catch (Exception e) {
+                    // Logowanie innych błędów, aby nie wywalać całej aplikacji
+                    System.err.println("Błąd sprawdzania serwera " + guild.getId() + ": " + e.getMessage());
                 }
             }
-
-            System.out.println("Shared guilds count: " + sharedGuilds.size());
-            return sharedGuilds;
         }
-
-
+        return sharedGuilds;
+    }
     @PostMapping("/auth/discord")
-    public UserDiscordReturnData ReciveUserDiscordData(@RequestBody FormData data) throws Exception {
-        String code = data.code;
-        System.out.println("codeIs: " + code);
+    public ResponseEntity<UserDiscordReturnData> receiveUserDiscordData(@RequestBody FormData data) {
+        try {
+            String code = data.code;
+            if (code == null || code.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
 
-        if (code == null || code.isEmpty()) {
-            System.out.println("Invalid code");
-            return null;
-        } else {
-            String accesToken = getAccessToken(code);
-            System.out.println("Access token: " + accesToken);
+            String accessTokenResponse = getAccessToken(code);
+            JsonNode dataFromCode = objectMapper.readTree(accessTokenResponse);
 
-
-            JsonNode dataFromCode = new ObjectMapper().readTree(accesToken);
-
-
+            if (!dataFromCode.has("access_token")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
             String accessToken = dataFromCode.get("access_token").asText();
 
-            //Take it if you will need it
-            //
-            //String refreshToken = dataFromCode.get("refresh_token").asText();
-            //String tokenType = dataFromCode.get("token_type").asText();
-            //String expiresIn = dataFromCode.get("expires_in").asText();
+            String userDataResponse = getUserInfo(accessToken);
+            JsonNode userDataFromResponse = objectMapper.readTree(userDataResponse);
 
-            String userDataRespone = getUserInfo(accessToken);
-            System.out.println("userDataRespone: " + userDataRespone);
-            JsonNode userDataFromRespone = new ObjectMapper().readTree(userDataRespone);
+            String discordId = userDataFromResponse.get("id").asText();
+            int numberOfUsers = userRepository.getNumberOfUsersByDiscordId(discordId);
 
+            String usernameFromResponse = userDataFromResponse.get("username").asText();
+            String globalNameFromResponse = userDataFromResponse.has("global_name") && !userDataFromResponse.get("global_name").isNull()
+                    ? userDataFromResponse.get("global_name").asText() : usernameFromResponse;
 
-            String discord_id = userDataFromRespone.get("id").asString();
-            int numberOfUsers = userRepository.getNumberOfUsersByDiscordId(discord_id);
+            // Pobieranie i zabezpieczenie awatara (jeśli użytkownik nie ma awatara, ustawia domyślny)
+            String avatar = userDataFromResponse.has("avatar") && !userDataFromResponse.get("avatar").isNull()
+                    ? userDataFromResponse.get("avatar").asText() : null;
+            String avatarURL = avatar != null
+                    ? "https://cdn.discordapp.com/avatars/" + discordId + "/" + avatar + ".png"
+                    : "https://cdn.discordapp.com/embed/avatars/0.png";
+
+            UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
+            userDiscordReturnData.username = usernameFromResponse;
+            userDiscordReturnData.global_name = globalNameFromResponse;
+            userDiscordReturnData.isLogged = true;
+            userDiscordReturnData.discordId = discordId;
+            userDiscordReturnData.avatarURL = avatarURL;
+
+            Long userId;
 
             if (numberOfUsers == 0) {
-                // User Register Procces
-                //dodaj usera
-                System.out.println("No users found");
+                // PROCES REJESTRACJI (Nowy użytkownik)
+                System.out.println("Rejestracja nowego użytkownika: " + usernameFromResponse);
                 UserLoginDTO userDataToSave = new UserLoginDTO();
-                userDataToSave.setDiscord_id(discord_id);
-
-
-                userDataToSave.setUserNameAndSurname(userDataFromRespone.get("username").asText());
-
+                userDataToSave.setDiscord_id(discordId);
+                userDataToSave.setUrl(avatarURL);
+                userDataToSave.setUserNameAndSurname(usernameFromResponse);
 
                 userRepository.save(userDataToSave);
-
-                UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
-
-                userDiscordReturnData.username = userDataFromRespone.get("username").asText();
-                userDiscordReturnData.global_name = userDataFromRespone.get("global_name").asText();
-                userDiscordReturnData.isLogged = true;
-                userDiscordReturnData.discordId = discord_id;
-
-                String avatar = userDataFromRespone.get("avatar").asText();
-                String avatarURL = "https://cdn.discordapp.com/avatars/" + discord_id + "/" + avatar + ".png";
-
-                userDiscordReturnData.avatarURL = avatarURL;
-
-                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
-                userDiscordReturnData.id = userId;
-
-
-                System.out.println("regged in" + userDiscordReturnData);
-
-
-                return userDiscordReturnData;
-
+                userId = userRepository.getUserIdByDiscord_id(discordId);
             } else {
+                // PROCES LOGOWANIA (Istniejący użytkownik)
+                userId = userRepository.getUserIdByDiscord_id(discordId);
 
-
-                // tutaj ważne dodaj skrypt który zmienie tą nazwe urzytkownika w momencie gdy skrypt wykryje że różni się ona od tej jaką ma sie na discordzie
-
-
-                String usernameFromResponse = userDataFromRespone.get("username").asText();
-                String userGlobalNameFromDB = userRepository.getUserNameByDiscordId(discord_id);
-                Long userId = userRepository.getUserIdByDiscord_id(discord_id);
-
-
-                if (usernameFromResponse != userGlobalNameFromDB) {
-                    System.out.println("Updating data");
-                    userRepository.updateUsername(userId, usernameFromResponse);
-                }
-
-
-                UserDiscordReturnData userDiscordReturnData = new UserDiscordReturnData();
-                userDiscordReturnData.username = userDataFromRespone.get("username").asText();
-                userDiscordReturnData.global_name = userDataFromRespone.get("global_name").asText();
-                userDiscordReturnData.isLogged = true;
-                userDiscordReturnData.discordId = discord_id;
-
-                String avatar = userDataFromRespone.get("avatar").asText();
-                String avatarURL = "https://cdn.discordapp.com/avatars/" + discord_id + "/" + avatar + ".png";
-
-                userDiscordReturnData.avatarURL = avatarURL;
-
-
-                userDiscordReturnData.id = userId;
-
-                System.out.println("logged in" + userDiscordReturnData);
-
-
-
-                List<GuildsReturnData> discordGuilds =  getUserGuilds(accessToken,discord_id);
-
-                for(GuildsReturnData guildsReturnData : discordGuilds) {
-                    DiscordServersDTO dataToSave = new DiscordServersDTO();
-
-                    dataToSave.setServerId(guildsReturnData.id);
-                    dataToSave.setServerIconUrl(guildsReturnData.iconUrl);
-                    dataToSave.setServerName(guildsReturnData.name);
-                    dataToSave.setUser(userRepository.getReferenceById(userId));
-
-                    discordServersRepository.save(dataToSave);
-
-                }
-
-
-                return userDiscordReturnData;
-
+                // WYMUSZENIE AKTUALIZACJI: Przy każdym logowaniu wysyłamy najnowsze dane z Discorda do bazy
+                System.out.println("Aktualizacja danych dla istniejącego użytkownika o ID: " + userId);
+                userRepository.updateUsername(userId, usernameFromResponse);
+                userRepository.updateUserUrl(userId, avatarURL);
             }
 
+            userDiscordReturnData.id = userId;
 
+            // OBSŁUGA SERWERÓW
+            List<GuildsReturnData> discordGuilds = getUserGuilds(accessToken, discordId);
+
+            // Opcjonalnie: Jeśli chcesz uniknąć duplikowania serwerów w bazie danych przy wielokrotnym logowaniu,
+            // odkomentuj poniższą linię (wymaga dodania metody deleteByUserId w discordServersRepository)
+            // discordServersRepository.deleteByUserId(userId);
+
+            for (GuildsReturnData guildData : discordGuilds) {
+                DiscordServersDTO dataToSave = new DiscordServersDTO();
+                dataToSave.setServerId(guildData.getId());
+                dataToSave.setServerIconUrl(guildData.getIconUrl());
+                dataToSave.setServerName(guildData.getName());
+                dataToSave.setUser(userRepository.getReferenceById(userId));
+
+                discordServersRepository.save(dataToSave);
+            }
+
+            return ResponseEntity.ok(userDiscordReturnData);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
     }
-
 }

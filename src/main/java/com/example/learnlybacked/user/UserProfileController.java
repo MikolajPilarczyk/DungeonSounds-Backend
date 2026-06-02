@@ -15,7 +15,7 @@ import java.util.List;
 public class UserProfileController {
 
 
-    public record UserProfileData(String username, String bio, int likes, int materials,String accountType) {
+    public record UserProfileData(String username, String bio, int likes, int materials,String accountType, String url) {
     }
 
     public record UsernameToSend(String usernameToFind) {
@@ -37,7 +37,7 @@ public class UserProfileController {
         UserProfileData returnData = userRepository.takeUserProfileDataByUsername(user.getUserNameAndSurname());
 
 
-        System.out.println("wyslano dane" + returnData);
+        System.out.println("wyslano dane profilu urzytkownika" + returnData);
         return returnData;
     }
 

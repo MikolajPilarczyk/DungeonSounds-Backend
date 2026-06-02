@@ -32,6 +32,8 @@ public class UserLoginDTO {
     private String accountType;
     private String bio;
 
+    private String url;
+
     @Transient
     private Set<UserPlaylistsSetTable> likedPlaylists;
 
