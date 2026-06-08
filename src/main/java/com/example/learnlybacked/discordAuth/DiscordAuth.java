@@ -210,6 +210,9 @@ public class DiscordAuth {
             userDiscordReturnData.discordId = discordId;
             userDiscordReturnData.avatarURL = avatarURL;
 
+
+
+
             Long userId;
 
             if (numberOfUsers == 0) {
