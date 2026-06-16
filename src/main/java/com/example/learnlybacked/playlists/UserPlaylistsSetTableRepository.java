@@ -1,7 +1,9 @@
 package com.example.learnlybacked.playlists;
 
 import com.example.learnlybacked.user.UserLoginDTO;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,6 +19,7 @@ public interface UserPlaylistsSetTableRepository extends JpaRepository<UserPlayl
 
 
     List<UserPlaylistsSetTable> findByUser(UserLoginDTO user);
+
 
 
     @Query("select p from UserPlaylistsSetTable p where p.id = :id")

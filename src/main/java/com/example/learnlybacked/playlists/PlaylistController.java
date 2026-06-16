@@ -16,6 +16,10 @@ import java.util.List;
 @RequestMapping("/api")
 public class PlaylistController
 {
+    public PlaylistController(PlaylistService playlistService) {
+        this.playlistService = playlistService;
+    }
+
     public static class FormDataSongs
     {
         public String title;
@@ -38,7 +42,7 @@ public class PlaylistController
 
     record PlaylistId(Long playlistId) { }
 
-
+    private final PlaylistService playlistService;
 
 
     @Autowired
@@ -96,6 +100,23 @@ public class PlaylistController
 
         return "Zapisano Very Good";
     }
+
+    public record SongToAdd(
+
+            Long playlistId,
+            String title,
+            String url
+                    ){}
+
+    @PostMapping("/add-song")
+    public Long addSong(@RequestBody SongToAdd data) {
+        System.out.println(data.title() + " " + data.playlistId());
+
+        SongsTable savedSong = playlistService.addSongToPlaylist(data);
+
+        return savedSong.getId();
+    }
+
 
     @PostMapping("/get-playlist")
     public List<UserPlaylistsSetTable> RecivePlaylistSet(@RequestBody PlaylistId data)
