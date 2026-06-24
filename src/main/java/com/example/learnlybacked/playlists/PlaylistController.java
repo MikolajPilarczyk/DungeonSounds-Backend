@@ -40,6 +40,15 @@ public class PlaylistController
         public List<FormDataUserPlaylists> playlists;
     }
 
+
+    public static class PlaylistAddFormData
+    {
+        public Long playlistSetId;
+        public String title;
+        public List<FormDataSongs> songs;
+
+    }
+
     record PlaylistId(Long playlistId) { }
 
     private final PlaylistService playlistService;
@@ -100,6 +109,50 @@ public class PlaylistController
 
         return "Zapisano Very Good";
     }
+
+
+
+
+
+
+    @Transactional
+    @PostMapping("/upload/playlist")
+    public String UploadPlaylist(@RequestBody PlaylistAddFormData data)
+    {
+
+        System.out.println(data.playlistSetId);
+        System.out.println(data.title);
+
+        UserPlaylistsSetTable userPlaylistsSetTable = userPlaylistsSetTableRepository.findById(Long.parseLong(data.playlistSetId.toString()))
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono zbioru"));
+
+        PlaylistTable playlistToSave = new PlaylistTable();
+        playlistToSave.setTitle(data.title);
+
+        for (int j = 0; j < data.songs.size(); j++) {
+            //Current Song
+            SongsTable song = new SongsTable();
+            song.setTitle(data.songs.get(j).title);
+            song.setUrl(data.songs.get(j).url);
+
+            playlistToSave.addSong(song);
+        }
+
+        userPlaylistsSetTable.addPlaylist(playlistToSave);
+
+
+        userPlaylistsSetTableRepository.save(userPlaylistsSetTable);
+
+        return "Added very good playlist";
+    }
+
+
+
+
+
+
+
+
 
     public record SongToAdd(
 
